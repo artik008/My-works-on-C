@@ -1,0 +1,96 @@
+# include <stdio.h>
+# include <stdlib.h>
+
+int errflag = 0;
+int endflag = 0;
+int order = 0;
+
+
+//Functions
+unsigned short make_ucs();
+void put_UCS(unsigned short utf);
+void UTFtoUCS ();
+
+int main () {
+
+UTFtoUCS();
+
+
+return 0;
+}
+
+
+//Same functions for UTF to UCS
+unsigned short make_ucs() {
+    unsigned short ucs, res_ucs;
+    char c;
+    char res_c;
+    if ((((res_c = (c = getchar()))&0xF0) == 0xE0)&&(c != EOF)) {
+        ucs = (0 | (res_c = c)&0xF)<<12;
+        if ((((res_c = (c = getchar()))&0xC0) == 0x80)&&(c != EOF)) {
+            res_ucs = 0;
+            ucs += (res_ucs|((res_c = c)&0x3F))<<6;
+            if ((((res_c = c = getchar())&0xC0) == 0x80)&&(c != EOF)) {
+                res_ucs = 0;
+                ucs += res_ucs|((res_c = c)&0x3F);
+            }
+            else if (c == EOF) errflag = 3;
+                 else errflag = 2;
+        }
+        else if (c == EOF) errflag = 3;
+             else errflag = 2;
+    }
+    else if ((((res_c = c)&0xE0) == 0xC0)&&(c != EOF)) {
+            ucs = (0 | (res_c = c)&0x1F)<<6;
+            if ((((res_c = (c = getchar()))&0xC0) == 0x80)&&(c != EOF)) {
+                res_ucs = 0;
+                ucs += (res_ucs|((res_c = c)&0x3F));
+            }
+            else if (c == EOF) errflag = 3;
+                 else errflag = 2;
+         }
+         else if ((((res_c = c)&0x80) == 0)&&(c != EOF)) {
+                ucs = (0 | (res_c = c)&0x7F);
+              }
+                else if (c == EOF) endflag = 1;
+                     else errflag = 2;
+    if ((errflag == 0)&&(endflag == 0)) {
+        return (ucs);
+    }
+    else return 0;
+}
+
+void put_UCS(unsigned short utf) {
+    unsigned short res_utf = utf;
+    char c = 0;
+    if ((errflag == 0)&&(endflag == 0)) {
+        if (order == 0) {
+            putchar (c|(res_utf&0xFF));
+            putchar ((c = 0)|(((res_utf = utf)&0xFF00)>> 8));
+        }
+        else {
+            putchar ((c = 0)|((res_utf&0xFF00)>> 8));
+            putchar (c|((res_utf = utf)&0xFF));
+        }
+    }
+}
+
+void UTFtoUCS() {
+    unsigned short BOM = make_ucs();
+    if ((endflag == 0)&&(errflag == 0)) {
+        if (BOM == 0xFFFE) order = 1;
+        put_UCS(BOM);
+    }
+    while ((errflag == 0)&&(endflag == 0)) {
+        put_UCS(make_ucs());
+    }
+    if (errflag == 2) fprintf(stderr,"%s","Uncorrect format of bytes");
+    if (errflag == 3) fprintf(stderr,"%s","Uncorrect count of bytes");
+}
+
+
+
+
+
+
+
