@@ -1,0 +1,89 @@
+# include <stdio.h>
+# include <stdlib.h>
+
+int errflag = 0;
+int endflag = 0;
+int order = 0;
+
+//Functions
+//UCS
+unsigned short get_ucs ();
+void make_print_utf (unsigned short ucs);
+int check_range (unsigned short ucs);
+void UCStoUTF ();
+
+int main () {
+
+UCStoUTF();
+
+return 0;
+}
+
+//Same functions for UCS to UTF
+unsigned short get_ucs () {
+    int byte1 = getchar();
+    int byte2 = getchar();
+    if (byte1 == EOF) {
+        endflag = 1;
+    }
+    if (byte2 == EOF) {
+        errflag = 1;
+    }
+    if (order == 0) {
+    return ((byte2&0xFF) << 8 | (byte1&0xFF));
+    }
+    else {
+    return ((byte1&0xFF) << 8 | (byte2&0xFF));
+    }
+}
+
+int check_range(unsigned short ucs) {
+    if (ucs <= 0x7F) {
+        return (1);
+    }
+    else if ((ucs > 0x7F)&&(ucs<= 0x7FF)) {
+        return (2);
+    }
+    else return(3);
+}
+
+void make_print_utf (unsigned short ucs) {
+    if ((errflag ==1)||(endflag == 1)) {}
+    else {
+        unsigned short res_ucs = ucs;
+        char c;
+        int range = check_range(ucs);
+        if (range == 1) {
+            c = 0 | (res_ucs = ucs) & 0x7F;
+            putchar(c);
+        }
+        else if (range == 2) {
+            c = (((res_ucs = ucs)>>6)&0x1F)|0xC0;
+            putchar (c);
+            c = ((res_ucs = ucs)&0x03F)|0x80;
+            putchar (c);
+        }
+        else {
+            c = (((res_ucs = ucs)>>12)&0xF)|0xE0;
+            putchar (c);
+            c = (((res_ucs = ucs)>>6)&0x3F)|0x80;
+            putchar (c);
+            c = ((res_ucs = ucs)&0x3F)|0x80;
+            putchar (c);
+        }
+    }
+}
+
+void UCStoUTF() {
+    //Check BOM
+    unsigned short BOM = get_ucs();
+    if (BOM == 0xFFFE) order = 1;
+
+    make_print_utf(BOM);
+
+    while ((errflag == 0)&&(endflag == 0)) {
+        make_print_utf(get_ucs());
+    }
+    if (errflag == 1) fprintf(stderr,"%s","Uncorrect count of bytes");
+}
+
